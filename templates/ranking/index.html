@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+{% load staticfiles %}
 <html>
     <head>
         <title>Ranking</title>
@@ -8,6 +9,7 @@
         <div>
             Hola Mundo! <br />
             <strong>{{ boldmessage }}</strong><br />
+            <img src="{% static "images/uahc.jpg" %}" alt="Picture of UAHC" />
         </div>
     </body>
 </html>

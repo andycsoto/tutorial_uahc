@@ -1,0 +1,398 @@
+Construir un sitio web
+
+Objetivo: Permite al usuario navegar a través de categorías definidas por usuarios y acceder a páginas de esas categorías.
+
+Home:
+- Ver las 5 ṕáginas más vistas
+- Ver las 5 categorías más vistas
+- Ver todas las categorías o buscar en ellas
+
+Categoría:
+- El nombre de la categoría, número de visitas, número de likes y lista de páginas asociadas a esa categoría con nombre y link.
+- Buscar (a través de la API de búsqueda) páginas que puedan ser conectadas a esta categoría.
+- Para una categoría en particular el cliente necesita el nombre de la categoría a guardar, las veces que la página ha sido visitada y cuantos usuarios han clickeado like.
+- Solo usuarios registrados podrán buscar y agregar paginas a las categorias. Los visitantes deberían poder registrarse para tener una cuenta.
+
+Mostrar Wireframes
+
+URL Mappings:
+
+- / o /ranking lleva al home
+- /ranking/about lleva al acerca de...
+- /ranking/category/nombre-de-la-categoria/ lleva a la categoría indicada partiendo por games, python y compilers
+
+
+Asumir que una página solo puede pertenecer a una categoría para mantener organización.
+
+Crear repo, clonar añadir .gitignore
+
+Instalar virtualenv
+
+Crear un virtualenv en una carpeta con python3
+virtualenv -p python3 .env
+
+Activar el virtualenv
+source .env/bin/activate
+
+Verificar que pip esté para python 3
+pip -V
+
+Instalar django 1.11
+pip install django==1.11
+
+verificar instalación django
+python
+import django
+django.get_version()
+
+Crear proyecto
+django-admin.py startproject project .
+
+Se crea un directorio project y un script manage.py
+Es el directorio de configuración del proyecto y contiene
+__init__.py que hace que python vea a projecto como un python package
+settings.py donde están los django project settings
+urls.py donde estan los url patterns del proyecto
+wsgi.py que ayuda a correr el servidor de desarrollo y hacer deploy a un ambiente de producción
+
+El script manage.py provee comandos para mantener el proyecto, por ejemplo permite correr el servidor de desarrollo, tester la aplicación y correr comandos de bases de datos. Basicamente lo usaremos para todos los comandos django
+
+A estas alturas ya podemos correr
+python manage.py runserver
+Ir a localhost:8000 y deberia verse la pantalla de bienvenida de django
+
+Se puede agregar la IP y un puerto para permitir a otros acceder al servidor de desarrollo
+Si no la sabe, puede utilizar 0.0.0.0
+No usar 80, 8080 o cualquiera de 1024 hacia abajo
+
+Django Apps
+Un proyecto Django es una colección de Apps y Configuraciones que juntos hacen una aplicación Web o un Sitio Web.
+python manage.py startapp ranking
+Crea los sgtes scripts:
+__init__.py
+admin.py aqui se registran los modelos para manejarlos en la interfaz de admin
+apps.py aqui van las configuraciones de la app
+models.py donde van los data models de la app (aqui van las ER)
+tests.py donde van las funciones para testear la app
+views.py aqui van los handlers de las requests y responses
+migrations folder donde va la info relacionada a db para los modelos
+
+views.py y models.py se usan mucho en cualquier app (modelo MVT)
+
+Una vez creada la app, hay que decirle a django que la app existe. Para ello se modifica settings.py, agregando 'ranking' a INSTALLED_APPS
+
+Crear una View
+Abrir views.py en la app ranking
+from django.http import HttpResponse
+
+def index(request):
+    return HttpResponse("Hola Mundo")
+
+Cada vista existe en views.py como una función individual.
+Cada vista tiene al menos un parámetro (un objeto HttpRequest) por convención se llama request.
+Cada vista debe retornar un objeto HttpResponse. Uno simple tiene como parametro un string que representa el contenido de la pagina que se va a mostrar.
+
+La pagina no se puede ver si no tiene un mapeo...
+Abrir urls.py y agregar a urlpatterns
+para eso importar views de ranking y agregar la url a las expresiones regulares
+
+Para hacerlo más modular, se puede cambiar como se hace routing. Se modifica urls.py para que apunte a la app, y luego en la app se añade su propio urls.py.
+Usando ^ranking/ todas las urls que empicen con ranking/ se manejan en la aplicación ranking.
+Cuando una URL hace match, el resto de la URL se pasa al urls.py de la app (para eso sirve el django.conf.urls.include() ).
+url(r'^ranking/', include('ranking.urls'))
+Ahora hay que crear urls.py en la app.
+Luego de esto, se ingresa al hola mundo por la url /rango/
+from django.conf.urls import url
+from ranking import views
+
+urlpatterns = [
+    url(r'^$', views.index, name='index'),
+]
+
+Primer parametro: la expresion ^$ hace match a un string vacio: ^ marca "comienza con" y $ marca "termina con"
+
+Segundo parametro: la vista index (recordar que cada función en views.py es una vista)
+
+Tercer parametro (opcional): en este caso 'index'. Al nombrar los mapeos se puede hacer march reverso. Se puede hacer referencia a un mapeo por el name en vez del URL. Sirve para la creación de templates.
+
+TAREA: regex !
+
+EJERCICIO: crear pagina about como /ranking/about
+--
+Templates, static y media files
+
+Un template contiene las partes estáticas de una página (las que no cambian). Es efectivamente una plantilla, que además contiene sintaxis especial que es reemplazada por contenido dinámico y asi produce una respuesta HTML final.
+
+Crear templates folder en el proyecto. Dentro, crear una folder con el nombre de la app. Ahi estarán los templates de la app.
+
+Luego se le dice a django donde se guardarán los templates (en settings.py) en TEMPLATES - DIRS (usar paths absolutos!)
+
+Para no usar paths absolutos:
+crear TEMPLATE_DIR = os.path.join(BASE_DIR, 'templates')
+porque BASE_DIR es la carpeta uahc_tutorial/project/
+y asi creamos de manera dinamica el path requerido por DIRS
+
+'DIRS': [TEMPLATE_DIR, ]
+
+Ahora agregamos un template index.html a la carpeta templates/ranking:
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Ranking</title>
+    </head>
+    <body>
+        <h1>Titulo de la pagina</h1>
+        <div>
+            Hola Mundo! <br />
+            <strong>{{ boldmessage }}</strong><br />
+        </div>
+    </body>
+</html>
+
+El texto {{ boldmessage }} es una variable de django template. 
+Si seteamos un valor a esta variable, será reemplazada en la vista.
+Para esto, la view de index tiene que cambiar y usaremos render.
+Agregamos a la función 
+context_dict={'boldmessage':'texto'}
+return render(request, 'ranking/index.html', context=context_dict)
+
+----
+Static Media Files
+Crear la carpeta static y la subcarpeta images
+Meter una imagen dentro
+Agregar
+STATIC_DIR = os.path.join(BASE_DIR, 'static')
+a settings.py abajo de BASE_DIR y TEMPLATE_DIR
+además crear STATICFILES_DIRS que es la lista de paths donde encontrar static files
+STATICFILES_DIRS = [STATIC_DIR, ]
+Ponerlo al final como el resto de las cosas relacionadas a static media
+Revisar que STATIC_URL esté definida como /static/
+Esta pemite espicificar la URL con la que los static files pueden ser accesados
+
+STATIC_DIR y STATICFILES_DIR son dos ubicaciones del lado dl servidor. STATIC_URL permite acceder a la ubicación desde el cliente.
+
+Ver la imagen en localhost:8000/static/images/nombre-de-la-imagen.jpg
+
+Para usar staticfiles, puede agregarse:
+
+{% load staticfiles %}
+
+a un template
+
+y en este caso paricular, agregar la foto a nuestro template, seria agregar:
+
+<img src="{% static "images/uahc.jpg" %}" alt="Picture of UAHC" />
+
+Entonces, para agregar cualquier archivo estático, basta con utilizar el tag {% static "path/to/static/content" %}
+e.g.
+
+<link rel="stylesheet" href="{% static "css/base.css" %}" />
+
+Si el archivo no está, tirará un 404
+
+MEDIA FILES
+Hay archivos que serán subidos por usuarios, que se deben servirse usando MEDIA
+Agregar la carpeta media al niverl de static y templates
+MEDIA_DIR = os.path.join(BASE_DIR, 'media')
+a settings.py cerca de BASE_DIR y TEMPLATE_DIR
+Además crear en settings.py
+MEDIA_ROOT = MEDIA_DIR
+MEDIA_URL = '/media/'
+
+Finalmente hay que decirle a django que debe servirse contenido desde MEDIA_URL
+Para eso, en urls.py del proyecto hay que llamar al metodo static
+from django.conf import settings
+from django.conf.urls.static import static
+urlpatterns = [...]+ static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+
+MODELOS Y BDs
+En django, las consultas a las bases de datos las realica el ORM. Los datos son encapsulados en un modelo. Un modelo es una clase Python que describe la data de una tabla. En vez de usar SQL, manipulamos un objeto del modelo correspondiente.
+En la aplicación que describimos más arriba:
+- Ranking, es esencialmente un directorio de páginas web, un sitio que contiene links a otros sitios web.
+- Hay categorías con un número de links y cada link pertenece a una solo categoria (1 a N)
+- Una categoría tiene un nombre, un numero de visitas y un número de likes
+- Una página hace referencia a una categoría, tiene un título, una URL y un número de vistas.
+En settings.py la variable DATABASES tiene una referencia a sqlite3 (un motor liviano de BD). Se puede cambiar a BD PostgreSQL, MySQL, MSSQL Server, etc. En ese caso se debe usar los keys USER, PASSWORD, HOST y PORT en el diccionario de la BD.
+*Tarea: usar PosrgreSQL como motor
+Una vez configurada la BD, hay que crear los dos modelos en models.py de ranking
+En este caso dos clases, que deben heredar de django.db.models.Model
+
+from django.db import models
+
+class Category(models.Model):
+	name = models.CharField(max_length=128, unique=True)
+	
+	def __str__(self):
+		return self.name
+
+class Page(models.Model):
+	category = models.ForeignKey(Category)
+	title = models.CharField(max_length=128)
+	url = models.URLField()
+	views = models.IntegerField(default=0)
+	
+	def __str__(self):
+		return self.title
+
+No se debe incluir id, ya que se agrega automáticamente como un entero autoincrementado y es clave primaria.
+Los tipos de datos más comunes son
+CharField
+URLField
+IntegerField
+DateField
+
+Se pueden especificar como unique (por ejemplo name en Category es único).
+Hay otros atributos, por ejemplo default o null (para declarar que un valor puede o no quedar en blanco).
+
+Para relaciones entre modelos están los sgtes tipos
+ForeignKey (1 a N) -> como en nuestro ejemplo
+OneToOneField (1 a 1)
+ManyToManyField (N a N)
+
+Finalmente, es buena práctica implementar __str__(), para que al hacer print muestre algo distinto a <Class: Class object>.
+Principalmente esto servirá en la Interfaz de Admin.
+
+MIGRACIONES
+Una vez definidos los modelos, migrate creará automaticamente las tablas en la bd
+python manage.py migrate
+con esto todas las apps instaladas en el django project tendran su representación en la BD
+
+Luego para administrar la BD se debe crear un superuser
+python manage.py createsuperuser
+
+Los modelos creados, no tienen migraciones, por lo que hay que crearlas
+python manage.py makemigrations
+(puede especificarse la aplicación para solo hacer las migraciones de dicha aplicación)
+y luego correr migrate
+
+Para ver el código SQL de una migración
+python manage.py sqlmigrate rango 0001
+
+Podemos interactuar con los modelos usando la django shell (sirve principalmente para debuggear)
+
+python manage.py shell
+
+from ranking.models import Category
+print(Category.objects.all())
+c=Category(name="Test")
+c.save()
+print(Category.objects.all())
+quit()
+
+TAREA: ver la doc oficial para ver que se puede hacer con la shell y los modelos
+
+ADMIN
+Para agregar los modelos creados a admin, abrir ranking/admin.py y registrar los modelos
+
+from django.contrib import admin
+from rango.models import Category, Page
+admin.site.register(Category)
+admin.site.register(Page)
+
+Puedes ver que Category se muestra como Categorys
+Se puede modificar en models
+
+class Category(models.Model):
+	name = models.CharField(max_length=128, unique=True)
+	class Meta:
+		verbose_name_plural = 'Categories'
+	def __str__(self):
+		return self.name
+
+Population Script: Para tener datos de prueba en la bd
+
+import os
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'project.settings')
+import django
+django.setup()
+from ranking.models import Category, Page
+
+def populate():
+	python_pages = [
+{"title": "Official Python Tutorial",
+"url":"http://docs.python.org/2/tutorial/"},
+{"title":"How to Think like a Computer Scientist",
+"url":"http://www.greenteapress.com/thinkpython/"},
+{"title":"Learn Python in 10 Minutes",
+"url":"http://www.korokithakis.net/tutorials/python/"} ]
+django_pages = [
+{"title":"Official Django Tutorial",
+"url":"https://docs.djangoproject.com/en/1.9/intro/tutorial01/"},
+{"title":"Django Rocks",
+"url":"http://www.djangorocks.com/"},
+{"title":"How to Tango with Django",
+"url":"http://www.tangowithdjango.com/"} ]
+other_pages = [
+{"title":"Bottle",
+"url":"http://bottlepy.org/docs/dev/"},
+{"title":"Flask",
+"url":"http://flask.pocoo.org"} ]
+cats = {"Python": {"pages": python_pages},
+"Django": {"pages": django_pages},
+"Other Frameworks": {"pages": other_pages} }
+
+	for cat, cat_data in cats.items():
+		c = add_cat(cat)
+		for p in cat_data["pages"]:
+			add_page(c, p["title"], p["url"])
+	
+	for c in Category.objects.all():
+		for p in Page.objects.filter(category=c):
+			print("- "+str(c)*" - "+str(p)))
+
+def add_page(cat, title, url, views=0):
+	p = Page.objects.get_or_create(category=cat, title=title)[0]
+	p.url=url
+	p.views=views
+	p.save()
+	return p
+
+def add_cat(name):
+	c = Category.objects.get_or_create(name=name)[0]
+	c.save()
+	return c
+
+if __name__ == '__main__':
+	print("Populando BD")
+	populate()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
