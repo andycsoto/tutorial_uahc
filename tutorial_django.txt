@@ -1,6 +1,6 @@
-Construir un sitio web
-
-Objetivo: Permite al usuario navegar a través de categorías definidas por usuarios y acceder a páginas de esas categorías.
+Construir un sitio web ("Ranking")
+-----
+Objetivo Final del tutorial: Permitir al usuario navegar a través de categorías definidas por usuarios y acceder a páginas de esas categorías.
 
 Home:
 - Ver las 5 ṕáginas más vistas
@@ -15,14 +15,13 @@ Categoría:
 
 Mostrar Wireframes
 
+Asumir que una página solo puede pertenecer a una categoría para mantener organización.
+-----
 URL Mappings:
 
 - / o /ranking lleva al home
 - /ranking/about lleva al acerca de...
 - /ranking/category/nombre-de-la-categoria/ lleva a la categoría indicada partiendo por games, python y compilers
-
-
-Asumir que una página solo puede pertenecer a una categoría para mantener organización.
 
 Crear repo, clonar añadir .gitignore
 
